@@ -1,0 +1,256 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <iomanip>
+#include <stdexcept> 
+#include <limits>    
+
+using namespace std;
+
+const int MAX_BOOKS = 100;
+
+struct Book {
+    string title;
+    string author;
+    string genre;
+};
+
+bool isValidGenre(const string& genre) {
+    string validGenres[] = {"Fiction", "Non-Fiction", "Mystery", "Thriller", "Romance", "Sci-Fi", "Fantasy"};
+    int size = sizeof(validGenres) / sizeof(validGenres[0]);
+    for (int i = 0; i < size; i++) {
+        if (genre == validGenres[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int getMenuOption() {
+    int option;
+    
+    while (true) {
+        cout << "Please enter a menu option (1-7): ";
+        cin >> option;
+        
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Error: Please enter a valid number." << endl;
+        } else if (option < 1 || option > 7) {
+            cout << "Error: Invalid choice. Please enter a number between 1 and 7." << endl;
+        } else {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');  
+            return option;  
+        }
+    }
+}
+
+void addBook(Book books[], int& bookCount) {
+    try {
+        if (bookCount >= MAX_BOOKS) {
+            throw runtime_error("Bookshelf is full. Cannot add more books.");
+        }
+
+        Book newBook;
+        cout << "Enter title: ";
+        getline(cin, newBook.title);
+        cout << "Enter author: ";
+        getline(cin, newBook.author);
+        cout << "Enter genre (Fiction, Non-Fiction, Mystery, Thriller, Romance, Sci-Fi, Fantasy): ";
+        getline(cin, newBook.genre);
+
+        if (isValidGenre(newBook.genre)) {
+            books[bookCount] = newBook;
+            bookCount++;
+            cout << "Book added successfully." << endl;
+        } else {
+            cout << "Invalid genre. Book not added." << endl;
+        }
+    }
+    catch (const runtime_error& e) {
+        cout << "Error: " << e.what() << endl;
+    }
+}
+
+void displayBooks(const Book books[], int bookCount) {
+    if (bookCount == 0) {
+        throw runtime_error("No books available to display.");
+    }
+    cout << setfill('_') << setw(41) << left << " " << setw(43) << left << "" << setw(26) << left << "" << " " << endl;
+    cout << setfill(' ') << setw(41) << left << "| Title" << setw(43) << left << "| Author" << setw(26) << left << "| Genre" << "|" << endl;
+    cout << setfill('_') << setw(41) << left << "|" << setw(43) << left << "|" << setw(26) << left << "|" << "|" << endl;
+
+    for (int i = 0; i < bookCount; i++) {
+        cout << setfill(' ') << "| " << setw(39) << left << books[i].title << fixed << "| " << setw(41) << left << books[i].author << "| " << setw(24) << left << books[i].genre << "|" << endl;   
+        cout << setfill('_') << "|" << setw(40) << left << "" << fixed << "|" << setw(42) << left << "" << "|" << setw(25) << left << "" << "|" << endl;   
+        
+    }
+}
+
+void saveBooksToFile(const Book books[], int bookCount) {
+    try {
+        ofstream outFile("books.txt", ios::out);
+        if (!outFile) {
+            throw ios_base::failure("Failed to open file for writing.");
+        }
+        outFile << setfill('_') << setw(41) << left << " " << setw(43) << left << "" << setw(26) << left << "" << " " << endl;
+        outFile << setfill(' ') << setw(41) << left << "| Title" << setw(43) << left << "| Author" << setw(26) << left << "| Genre" << "|" << endl;
+        outFile << setfill('_') << setw(41) << left << "|" << setw(43) << left << "|" << setw(26) << left << "|" << "|" << endl;
+
+    for (int i = 0; i < bookCount; i++) {
+        outFile << setfill(' ') << "| " << setw(39) << left << books[i].title << fixed << "| " << setw(41) << left << books[i].author << "| " << setw(24) << left << books[i].genre << "|" << endl;   
+        outFile << setfill('_') << "|" << setw(40) << left << "" << fixed << "|" << setw(42) << left << "" << "|" << setw(25) << left << "" << "|" << endl;   
+
+        }
+        outFile.close();
+        cout << "Books saved to file successfully." << endl;
+    }
+    catch (const ios_base::failure& e) {
+        cout << "Error: " << e.what() << endl;
+    }
+}
+
+void searchBook(const Book books[], int bookCount, const string& title) {
+    bool found = false;
+    for (int i = 0; i < bookCount; i++) {
+        if (books[i].title == title) {
+            cout << "Book found!" << endl;
+            displayBooks(&books[i], 1); 
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        cout << "Book '" << title << "' not found!" << endl;
+    }
+}
+
+void deleteBook(Book books[], int& bookCount, const string& title) {
+    bool found = false;
+    for (int i = 0; i < bookCount; i++) {
+        if (books[i].title == title) {
+            for (int j = i; j < bookCount - 1; j++) {
+                books[j] = books[j + 1];
+            }
+            bookCount--;
+            found = true;
+            cout << "Book '" << title << "' deleted successfully." << endl;
+            break;
+        }
+    }
+    if (!found) {
+        cout << "Book not found!" << endl;
+    }
+}
+
+
+void changeBook(Book books[], int bookCount, const string& title) {
+    bool found = false;
+    for (int i = 0; i < bookCount; i++) {
+        if (books[i].title == title) {
+            found = true;
+            cout << "Book found! Enter new details for the book." << endl;
+            cout << "Enter new title: ";
+            getline(cin, books[i].title);
+            cout << "Enter new author: ";
+            getline(cin, books[i].author);
+            cout << "Enter new genre (Fiction, Non-Fiction, Mystery, Thriller, Romance, Sci-Fi, Fantasy): ";
+            getline(cin, books[i].genre);
+            if (isValidGenre(books[i].genre)) {
+                cout << "Book updated successfully." << endl;
+            } else {
+                cout << "Invalid genre. Book not updated." << endl;
+            }
+            break;
+        }
+    }
+    if (!found) {
+        cout << "Book '" << title << "' not found!" << endl;
+    }
+}
+
+void displayMenu() {
+    cout << setfill('_') << setw(25) << left << " " << setw(15) << left << "" << " " << endl;
+    cout << setfill(' ') << setw(25) << left << "| BOOK MANGEMENT SYSTEM" << setw(15) << left << "" << "|" << endl;
+    cout << setfill('_') << setw(25) << left << "|" << setw(15) << left << "" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| MENU" << setw(15) << left << "| OPTION" << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Add Book" << setw(15) << left << "| Press 1"  << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Display Books" << setw(15) << left << "| Press 2"  << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Save Books to File" << setw(15) << left << "| Press 3"  << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Search Book" << setw(15) << left << "| Press 4"  << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Delete Book" << setw(15) << left << "| Press 5"  << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Change Book" << setw(15) << left << "| Press 6"  << "|" << endl;
+    cout << setfill('-') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+    cout << setfill(' ') << setw(25) << left << "| Exit" << setw(15) << left << "| Press 7"  << "|" << endl;
+    cout << setfill('_') << setw(25) << left << "|" << setw(15) << left << "|" << "|" << endl;
+}
+
+void handleMenuChoice(int option, Book books[], int& bookCount) {
+    string title;
+    try {
+        switch (option) {
+            case 1:
+                addBook(books, bookCount);
+                break;
+            case 2:
+                displayBooks(books, bookCount);
+                break;
+            case 3:
+                saveBooksToFile(books, bookCount);
+                break;
+            case 4:
+                cout << "Enter the title of the book to search: ";
+                getline(cin, title);
+                searchBook(books, bookCount, title);
+                break;
+            case 5:
+                cout << "Enter the title of the book to delete: ";
+                getline(cin, title);
+                deleteBook(books, bookCount, title);
+                break;
+            case 6:
+                cout << "Enter the title of the book to change: ";
+                getline(cin, title);
+                changeBook(books, bookCount, title);
+                break;
+            case 7:
+                cout << "Exiting program..." << endl;
+                break;
+            default:
+                throw invalid_argument("Invalid choice.  Please enter a number between 1 and 7.");
+        }
+    }
+    catch (const exception& e) {
+        cout << "Error: " << e.what() << endl;
+    }
+}
+
+int main() {
+    Book books[MAX_BOOKS];
+    int bookCount = 0;
+    int option;
+
+    do {
+        try {
+            
+            displayMenu();
+
+            option = getMenuOption();
+
+            handleMenuChoice(option, books, bookCount);
+        }
+        catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
+        }
+    } while (option != 7);
+
+    return 0;
+}
+
